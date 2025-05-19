@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{7F8ECD60-8DE4-4FD6-AA5E-BF827BE0C94C}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>RenameScript</RootNamespace>
-    <AssemblyName>RenameScript</AssemblyName>
+    <RootNamespace>RenameMediaScript</RootNamespace>
+    <AssemblyName>RenameMediaScript</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
