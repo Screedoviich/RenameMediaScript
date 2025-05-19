@@ -15,6 +15,11 @@ namespace RenameMediaScript
     {
         public static void Main()
         {
+            if (!Directory.Exists("Exiftool"))
+            {
+                throw new DirectoryNotFoundException("Для работы необходимо ПО Exiftool!");
+            }
+
             // Получить директорию с файлами
             string path = InputPathHandler();
             // Получить путь ко всем файлам в папке
