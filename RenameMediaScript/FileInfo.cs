@@ -60,66 +60,10 @@ namespace RenameMediaScript
             return outString.ToString();
         }
 
-        public void EditAndSaveNewFile(string directorySave = null)
-        {
-            if (!BeProcessing)
-            {
-                return;
-            }
-            if (directorySave == null)
-            {
-                directorySave = $"{DirectoryPath}\\Corrected files";
-            }
-            try
-            {
-                Directory.CreateDirectory(directorySave);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Не удалось проверить или создать директорию по пути {directorySave}", ex);
-            }
-            string fileNewFullPath = $"{directorySave}\\{FileNewName}.{FileExtension}";
-            File.Copy($"{DirectoryPath}\\{FileOriginalName}", fileNewFullPath, true);
-            EditDateTimeTagsFile(fileNewFullPath);
-        }
-
-        private void EditDateTimeTagsFile(string filePath)
-        {
-            // Дата и время в виде строки
-            string dateTimeString = CreateMediaDateTime.ToString("yyyy:MM:dd HH:mm:ss");
-            // Аргументы для Exiftool
-            string arg = $"-overwrite_original -AllDates=\"{dateTimeString}\" -api QuickTimeUTC \"{filePath}\"";
-            // Задать параметры для Exiftool
-            ProcessStartInfo startInfo = new ProcessStartInfo
-            {
-                FileName = @"Exiftool\exiftool.exe",
-                Arguments = arg,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                RedirectStandardError = true,
-                RedirectStandardOutput = true
-            };
-            // Запустить Exiftool
-            using (Process process = Process.Start(startInfo))
-            {
-                process.WaitForExit();
-                string output = process.StandardOutput.ReadToEnd();
-                string error = process.StandardError.ReadToEnd();
-                if (process.ExitCode != 0)
-                {
-                    throw new Exception($"Exiftool error: {error}");
-                }
-            }
-            // Изменить стандартные значения файла
-            File.SetCreationTime(filePath, CreateMediaDateTime);
-            File.SetLastWriteTime(filePath, CreateMediaDateTime);
-            File.SetLastAccessTime(filePath, CreateMediaDateTime);
-        }
-
         /// <summary>
-        /// Поиск и запись в свойство класса значения DateTime.
+        /// Выполнить поиск даты и времени формирования медиафайла по его наименованию.
         /// </summary>
-        private void WriteDateTime()
+        public void WriteDateTime()
         {
             // Получить дату и время в виде кортежа
             var dateTimeTuple = GetDateTimeTupleFromFileName(FileOriginalName);
@@ -180,9 +124,9 @@ namespace RenameMediaScript
         }
 
         /// <summary>
-        /// Записать в свойство класса новое наименование файла.
+        /// Записать новое наименование файла.
         /// </summary>
-        private void WriteNewFileName()
+        public void WriteNewFileName()
         {
             if (BeProcessing == true)
             {
@@ -204,8 +148,8 @@ namespace RenameMediaScript
                 return null;
             }
 
-            string[] imageFormats = new string[] { "jpg", "jpeg", "png" };
-            string[] videoFormats = new string[] { "mp4" };
+            string[] imageFormats = new string[] { ".jpg", ".jpeg", ".png" };
+            string[] videoFormats = new string[] { ".mp4" };
 
             if (imageFormats.Any(f => f.Contains(FileExtension)))
             {
@@ -216,6 +160,70 @@ namespace RenameMediaScript
                 return "_VID";
             }
             return null;
+        }
+
+        public void EditAndSaveNewFile(bool replaceFile, string exiftoolPath, string directorySave = null)
+        {
+            if (!BeProcessing)
+            {
+                return;
+            }
+            if (directorySave == null)
+            {
+                directorySave = $"{Path.GetDirectoryName(FileOriginalFullPath)}\\Corrected files";
+            }
+            try
+            {
+                Directory.CreateDirectory(directorySave);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Не удалось проверить или создать директорию по пути {directorySave}", ex);
+            }
+            string fileNewFullPath = $"{directorySave}\\{FileNewName}{FileExtension}";
+            if (replaceFile)
+            {
+                File.Move(FileOriginalFullPath, fileNewFullPath);
+            }
+            else
+            {
+                File.Copy(FileOriginalFullPath, fileNewFullPath, true);
+            }
+            
+            EditDateTimeTagsFile(fileNewFullPath, exiftoolPath);
+        }
+
+        private void EditDateTimeTagsFile(string filePath, string exiftoolPath)
+        {
+            // Дата и время в виде строки
+            string dateTimeString = CreateMediaDateTime.ToString("yyyy:MM:dd HH:mm:ss");
+            // Аргументы для Exiftool
+            string arg = $"-overwrite_original -AllDates=\"{dateTimeString}\" -api QuickTimeUTC \"{filePath}\"";
+            // Задать параметры для Exiftool
+            ProcessStartInfo startInfo = new ProcessStartInfo
+            {
+                FileName = exiftoolPath,
+                Arguments = arg,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardError = true,
+                RedirectStandardOutput = true
+            };
+            // Запустить Exiftool
+            using (Process process = Process.Start(startInfo))
+            {
+                process.WaitForExit();
+                string output = process.StandardOutput.ReadToEnd();
+                string error = process.StandardError.ReadToEnd();
+                if (process.ExitCode != 0)
+                {
+                    throw new Exception($"Exiftool error: {error}");
+                }
+            }
+            // Изменить стандартные значения файла
+            File.SetCreationTime(filePath, CreateMediaDateTime);
+            File.SetLastWriteTime(filePath, CreateMediaDateTime);
+            File.SetLastAccessTime(filePath, CreateMediaDateTime);
         }
     }
 }
