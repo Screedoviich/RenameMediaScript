@@ -13,8 +13,11 @@ namespace RenameMediaScript
 {
     public class Program
     {
-        public static void Main()
+        private static bool ReplaceFile { get; set; } = false;
+
+        public static void Main(string[] args)
         {
+            ArgsHandler(args);
             if (!Directory.Exists("Exiftool"))
             {
                 throw new DirectoryNotFoundException("Для работы необходимо ПО Exiftool!");
@@ -39,6 +42,20 @@ namespace RenameMediaScript
                 Console.ForegroundColor = ConsoleColor.White;
                 // Сохранить новый файл и изменить дату/время
                 fileInfo.EditAndSaveNewFile();
+            }
+        }
+
+        /// <summary>
+        /// Обработчик аргументов.
+        /// </summary>
+        /// <param name="args"></param>
+        private static void ArgsHandler(string[] args)
+        {
+            const string argReplaceFile = "-r";
+            if (args.Any(s => s == argReplaceFile))
+            {
+                ReplaceFile = true;
+                Console.WriteLine($"Найден параметр запуска {argReplaceFile}. Замена файлов разрешена.");
             }
         }
 
