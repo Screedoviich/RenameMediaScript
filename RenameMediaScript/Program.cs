@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Remoting.Metadata.W3cXsd2001;
 using System.Text;
@@ -15,16 +16,16 @@ namespace RenameMediaScript
     {
         private static bool ReplaceFile { get; set; } = false;
 
+        private static string FilesPath { get; set; }
+
         public static void Main(string[] args)
         {
+            ExiftoolExists();
             ArgsHandler(args);
-            if (!Directory.Exists("Exiftool"))
-            {
-                throw new DirectoryNotFoundException("Для работы необходимо ПО Exiftool!");
-            }
 
             // Получить директорию с файлами
             string path = InputPathHandler();
+
             // Получить путь ко всем файлам в папке
             string[] filesPath = Directory.GetFiles(path);
             // Работа с файлами
@@ -46,9 +47,22 @@ namespace RenameMediaScript
         }
 
         /// <summary>
-        /// Обработчик аргументов.
+        /// Обработчик наличия программного обеспечения Exiftool для корректной работы.
         /// </summary>
-        /// <param name="args"></param>
+        /// <exception cref="DirectoryNotFoundException"></exception>
+        private static void ExiftoolExists()
+        {
+            const string exiftoolPath = @"Exiftool\exiftool.exe";
+            if (!Directory.Exists(Path.GetDirectoryName(exiftoolPath)))
+            {
+                throw new DirectoryNotFoundException($"Для работы необходимо ПО Exiftool!\nПоместите исполняемый файл по пути {Environment.CurrentDirectory}\\{exiftoolPath}");
+            }
+        }
+
+        /// <summary>
+        /// Обработчик входных параметров.
+        /// </summary>
+        /// <param name="args">Массив параметров.</param>
         private static void ArgsHandler(string[] args)
         {
             const string argReplaceFile = "-r";
@@ -66,7 +80,7 @@ namespace RenameMediaScript
         /// <exception cref="DirectoryNotFoundException"></exception>
         public static string InputPathHandler()
         {
-            Console.Write("Введите путь к папке: ");
+            Console.Write("Введите путь к папке с медиафайлами: ");
             string userPath = Console.ReadLine();
             // Удалить лишние пробелы и апострофы
             string resultPath = userPath.Trim().Replace("\"", "");
