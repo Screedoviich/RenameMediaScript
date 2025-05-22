@@ -53,7 +53,7 @@ namespace RenameMediaScript
         public override string ToString()
         {
             StringBuilder outString = new StringBuilder();
-            outString.Append($"Полное наименование файла: '{FileOriginalName}'\n");
+            outString.Append($"Полное наименование файла: '{FileOriginalName}{FileExtension}'\n");
             outString.Append($"Необходимость обработки: '{(BeProcessing ? "Да" : "Нет")}'\n");
             outString.Append($"Найденная дата формирования медиа: '{(CreateMediaDateTime == DateTime.MinValue ? "" : CreateMediaDateTime.ToString())}'\n");
             outString.Append($"Новое наименование: '{FileNewName}'\n");
@@ -63,64 +63,28 @@ namespace RenameMediaScript
         /// <summary>
         /// Выполнить поиск даты и времени формирования медиафайла по его наименованию.
         /// </summary>
-        public void WriteDateTime()
+        public void WriteDateTime(string[] regexStringArray)
         {
-            // Получить дату и время в виде кортежа
-            var dateTimeTuple = GetDateTimeTupleFromFileName(FileOriginalName);
-            // Задать формат поиска даты из кортежа
-            const string formatDateTimeTuple = "(yyyy, MM, dd, HH, mm, ss)";
-            // Проверить и преобразовать строку в дату и время
-            if (DateTime.TryParseExact(dateTimeTuple.ToString(), formatDateTimeTuple, null, System.Globalization.DateTimeStyles.None, out DateTime dateTimeResult))
+            foreach (string regexString in regexStringArray)
             {
-                CreateMediaDateTime = dateTimeResult;
-                BeProcessing = true;
+                Regex regex = new Regex(regexString, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+                Match match = regex.Match(FileOriginalName);
+                if (match != null)
+                {
+                    string tempDateTime = match.Groups["year"].Value + match.Groups["month"].Value + match.Groups["day"].Value + match.Groups["hour"].Value + match.Groups["minute"].Value + match.Groups["second"].Value;
+                    const string formatDateTime = "yyyyMMddHHmmss";
+                    if (DateTime.TryParseExact(tempDateTime, formatDateTime, null, System.Globalization.DateTimeStyles.None, out DateTime dateTimeResult))
+                    {
+                        CreateMediaDateTime = dateTimeResult;
+                        BeProcessing = true;
+                        break;
+                    }
+                    else
+                    {
+                        BeProcessing = false;
+                    }
+                }
             }
-            else
-            {
-                BeProcessing = false;
-            }
-        }
-
-        /// <summary>
-        /// Выполняет поиск даты и времени в строке с помощью регулярных выражений и возвращает кортеж с данными.
-        /// </summary>
-        /// <param name="fileName">Строка для поиска.</param>
-        /// <returns>Кортеж содержащий дату и время. Год, месяц, день, час, минута, секунда.</returns>
-        private (string year, string month, string day, string hour, string minute, string second) GetDateTimeTupleFromFileName(string fileName)
-        {
-            // Объявить кортеж
-            (string year, string month, string day, string hour, string minute, string second) dateTimeTuple;
-            dateTimeTuple = (year: null, month: null, day: null, hour: null, minute: null, second: null);
-            // Начать поиск по регулярным выражениям
-            Regex regex;
-            #region Шаблон классический
-            regex = new Regex(@"^(IMG_|VID_)\d{8}_\d{6}(\.\w+|)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-            if (regex.IsMatch(fileName))
-            {
-                dateTimeTuple.year = fileName.Substring(4, 4);
-                dateTimeTuple.month = fileName.Substring(8, 2);
-                dateTimeTuple.day = fileName.Substring(10, 2);
-                dateTimeTuple.hour = fileName.Substring(13, 2);
-                dateTimeTuple.minute = fileName.Substring(15, 2);
-                dateTimeTuple.second = fileName.Substring(17, 2);
-                goto next;
-            }
-            #endregion
-            #region Шаблон повторный
-            regex = new Regex(@"^\d{4}\.\d{2}\.\d{2}_\d{2}-\d{2}-\d{2}(_VID|_IMG|)(\.\w+|)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-            if (regex.IsMatch(fileName))
-            {
-                dateTimeTuple.year = fileName.Substring(0, 4);
-                dateTimeTuple.month = fileName.Substring(5, 2);
-                dateTimeTuple.day = fileName.Substring(8, 2);
-                dateTimeTuple.hour = fileName.Substring(11, 2);
-                dateTimeTuple.minute = fileName.Substring(14, 2);
-                dateTimeTuple.second = fileName.Substring(17, 2);
-                goto next;
-            }
-        #endregion
-        next:
-            return dateTimeTuple;
         }
 
         /// <summary>

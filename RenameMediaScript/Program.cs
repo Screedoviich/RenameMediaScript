@@ -22,6 +22,9 @@ namespace RenameMediaScript
             ExiftoolExists(exiftoolPath);
             ArgsHandler(args);
 
+            Settings settings = new Settings();
+            settings.Load();
+
             // Получить директорию с файлами
             string path = InputPathHandler();
             // Получить путь ко всем файлам в папке
@@ -33,7 +36,7 @@ namespace RenameMediaScript
                 Console.WriteLine($"{i + 1}.....");
                 // Создание объекта
                 FileInfo fileInfo = new FileInfo(filesPath[i]);
-                fileInfo.WriteDateTime();
+                fileInfo.WriteDateTime(settings.RegexMediaDateTime.ToArray());
                 fileInfo.WriteNewFileName();
                 // Вывести информацию о файлах
                 if (fileInfo.BeProcessing)
