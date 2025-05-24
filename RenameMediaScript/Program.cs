@@ -18,8 +18,6 @@ namespace RenameMediaScript
 
         public static void Main(string[] args)
         {
-            const string exiftoolPath = @"Exiftool\exiftool.exe";
-            ExiftoolExists(exiftoolPath);
             ArgsHandler(args);
 
             Settings settings = new Settings();
@@ -46,24 +44,11 @@ namespace RenameMediaScript
                 Console.WriteLine(fileInfo.ToString());
                 Console.ForegroundColor = ConsoleColor.White;
                 // Сохранить новый файл и изменить дату/время
-                fileInfo.EditAndSaveNewFile(ReplaceFile, exiftoolPath);
+                fileInfo.EditAndSaveNewFile(ReplaceFile, settings.ExiftoolPath);
             }
 
             Console.WriteLine("Программа завершила работу.");
             Console.ReadKey();
-        }
-
-        /// <summary>
-        /// Обработчик наличия программного обеспечения Exiftool для корректной работы.
-        /// </summary>
-        /// <exception cref="DirectoryNotFoundException"></exception>
-        private static void ExiftoolExists(string exiftoolPath)
-        {
-            
-            if (!Directory.Exists(Path.GetDirectoryName(exiftoolPath)))
-            {
-                throw new DirectoryNotFoundException($"Для работы необходимо ПО Exiftool!\nПоместите исполняемый файл по пути {Environment.CurrentDirectory}\\{exiftoolPath}");
-            }
         }
 
         /// <summary>
@@ -98,7 +83,7 @@ namespace RenameMediaScript
             }
             else
             {
-                throw new DirectoryNotFoundException("Не найдена директория по пути " + userPath);
+                throw new DirectoryNotFoundException($"Не найдена директория по пути {userPath}");
             }
         }
     }

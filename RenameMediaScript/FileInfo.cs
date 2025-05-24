@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -71,7 +72,14 @@ namespace RenameMediaScript
                 Match match = regex.Match(FileOriginalName);
                 if (match != null)
                 {
-                    string tempDateTime = match.Groups["year"].Value + match.Groups["month"].Value + match.Groups["day"].Value + match.Groups["hour"].Value + match.Groups["minute"].Value + match.Groups["second"].Value;
+                    string tempDateTime = match.Groups[MediaDateTime.year.ToString()].Value
+                        + match.Groups[MediaDateTime.month.ToString()].Value
+                        + match.Groups[MediaDateTime.day.ToString()].Value
+                        + match.Groups[MediaDateTime.hour.ToString()].Value
+                        + match.Groups[MediaDateTime.minute.ToString()].Value
+                        + match.Groups[MediaDateTime.second.ToString()].Value;
+                    
+                    
                     const string formatDateTime = "yyyyMMddHHmmss";
                     if (DateTime.TryParseExact(tempDateTime, formatDateTime, null, System.Globalization.DateTimeStyles.None, out DateTime dateTimeResult))
                     {
@@ -189,5 +197,15 @@ namespace RenameMediaScript
             File.SetLastWriteTime(filePath, CreateMediaDateTime);
             File.SetLastAccessTime(filePath, CreateMediaDateTime);
         }
+    }
+
+    public enum MediaDateTime
+    {
+        year,
+        month,
+        day,
+        hour,
+        minute,
+        second
     }
 }
