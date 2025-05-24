@@ -71,7 +71,7 @@ namespace RenameMediaScript
         public void Load()
         {
             SearchRegexMediaDateTime();
-            SearchExiftool();
+            ExiftoolPath = GetElementValue(nameof(ExiftoolPath));
         }
 
         private void SearchRegexMediaDateTime()
@@ -97,20 +97,27 @@ namespace RenameMediaScript
             Console.WriteLine($"Количество загруженных регулярных выражений - {_regexMediaDateTime.Count}.");
         }
 
-        private void SearchExiftool()
+        /// <summary>
+        /// Выполнить поиск элемента по названию, произвести обработку, получить значение элемента.
+        /// </summary>
+        /// <param name="elementName">Название элемента.</param>
+        /// <returns>Значение элемента.</returns>
+        /// <exception cref="Exception"></exception>
+        private string GetElementValue(string elementName)
         {
-            var elementExiftoolPath = _document.Descendants(nameof(ExiftoolPath)).FirstOrDefault();
-            if (elementExiftoolPath == null)
+            // Поиск элемента по названию
+            XElement element = _document.Descendants(elementName).FirstOrDefault();
+            // Если элемент не найден
+            if (element == null)
             {
-                throw new Exception($"Элемент {nameof(ExiftoolPath)} не найден в файле настроек.");
+                throw new Exception($"Элемент {elementName} не найден в файле настроек.");
             }
-
-            if (string.IsNullOrWhiteSpace(elementExiftoolPath.Value))
+            // Если элемент пустой
+            if (string.IsNullOrWhiteSpace(element.Value))
             {
-                throw new Exception($"Элемент {nameof(ExiftoolPath)} найден в файле настроек, но не заполнен!");
+                throw new Exception($"Элемент {elementName} найден в файле настроек, но не заполнен!");
             }
-
-            ExiftoolPath = elementExiftoolPath.Value;
+            return element.Value;
         }
     }
 }
