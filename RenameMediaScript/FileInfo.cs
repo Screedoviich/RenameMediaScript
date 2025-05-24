@@ -70,7 +70,7 @@ namespace RenameMediaScript
             {
                 Regex regex = new Regex(regexString, RegexOptions.Compiled | RegexOptions.IgnoreCase);
                 Match match = regex.Match(FileOriginalName);
-                if (match != null)
+                if (match.Success)
                 {
                     string tempDateTime = match.Groups[MediaDateTime.year.ToString()].Value
                         + match.Groups[MediaDateTime.month.ToString()].Value
@@ -78,7 +78,6 @@ namespace RenameMediaScript
                         + match.Groups[MediaDateTime.hour.ToString()].Value
                         + match.Groups[MediaDateTime.minute.ToString()].Value
                         + match.Groups[MediaDateTime.second.ToString()].Value;
-                    
                     
                     const string formatDateTime = "yyyyMMddHHmmss";
                     if (DateTime.TryParseExact(tempDateTime, formatDateTime, null, System.Globalization.DateTimeStyles.None, out DateTime dateTimeResult))
