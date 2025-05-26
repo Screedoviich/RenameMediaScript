@@ -40,25 +40,40 @@ namespace RenameMediaScript
         /// <summary>
         /// Необходимость обработки файла.
         /// </summary>
-        public bool BeProcessing { get; set; }
+        public bool? BeProcessing { get; set; }
+
+        public MediaFileType Type { get; set; }
 
         public FileInfo(string fileFullPath)
         {
             FileOriginalFullPath = fileFullPath;
             FileOriginalName = Path.GetFileNameWithoutExtension(fileFullPath);
             FileExtension = Path.GetExtension(fileFullPath);
-            if (string.IsNullOrWhiteSpace(FileExtension))
-                FileExtension = null;
         }
 
         public override string ToString()
         {
             StringBuilder outString = new StringBuilder();
-            outString.Append($"Полное наименование файла: '{FileOriginalName}{FileExtension}'\n");
-            outString.Append($"Необходимость обработки: '{(BeProcessing ? "Да" : "Нет")}'\n");
+            outString.Append($"Наименование файла: '{FileOriginalName}'. Расширение: '{FileExtension}'\n");
+            //outString.Append($"Необходимость обработки: '{(BeProcessing ? "Да" : "Нет")}'\n");
             outString.Append($"Найденная дата формирования медиа: '{(CreateMediaDateTime == DateTime.MinValue ? "" : CreateMediaDateTime.ToString())}'\n");
             outString.Append($"Новое наименование: '{FileNewName}'\n");
             return outString.ToString();
+        }
+
+        public void CheckFileExtension(string[] imageExtensions, string[] videoExtensions)
+        {
+            if (imageExtensions.Any(f => f.Contains(FileExtension)))
+            {
+                Type = MediaFileType.Image;
+                return;
+            }
+            if (videoExtensions.Any(f => f.Contains(FileExtension)))
+            {
+                Type = MediaFileType.Video;
+                return;
+            }
+            BeProcessing = false;
         }
 
         /// <summary>
@@ -66,9 +81,15 @@ namespace RenameMediaScript
         /// </summary>
         public void WriteDateTime(string[] regexStringArray)
         {
+            if (BeProcessing == false)
+            {
+                return;
+            }
+
             foreach (string regexString in regexStringArray)
             {
-                Regex regex = new Regex(regexString, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+                
+                Regex regex = new Regex(regexString);
                 Match match = regex.Match(FileOriginalName);
                 if (match.Success)
                 {
@@ -135,7 +156,7 @@ namespace RenameMediaScript
 
         public void EditAndSaveNewFile(bool replaceFile, string exiftoolPath, string directorySave = null)
         {
-            if (!BeProcessing)
+            if (BeProcessing == false)
             {
                 return;
             }
@@ -206,5 +227,14 @@ namespace RenameMediaScript
         hour,
         minute,
         second
+    }
+
+    public enum  MediaFileType
+    {
+        [Description("_IMG")]
+        Image,
+
+        [Description("_VID")]
+        Video
     }
 }
