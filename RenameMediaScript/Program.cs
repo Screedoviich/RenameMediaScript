@@ -24,6 +24,8 @@ namespace RenameMediaScript
             // Получить путь ко всем файлам в папке
             string[] filesPath = Directory.GetFiles(path);
 
+            Console.WriteLine($"Найдено `{filesPath.Length}` файлов в папке.\n");
+
             // Работа с файлами
             for (int i = 0; i < filesPath.Length; i++)
             {
@@ -66,7 +68,7 @@ namespace RenameMediaScript
             }
             else
             {
-                throw new DirectoryNotFoundException($"Не найдена директория по пути {userPath}");
+                throw new DirectoryNotFoundException($"Не найдена директория по пути `{userPath}`.");
             }
         }
     }

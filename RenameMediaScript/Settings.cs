@@ -13,6 +13,8 @@ namespace RenameMediaScript
     /// </summary>
     public class Settings
     {
+        private const string FILE_NAME = "Settings.xml";
+
         /// <summary>
         /// XML документ содержащий файл с настройками.
         /// </summary>
@@ -56,8 +58,14 @@ namespace RenameMediaScript
         }
         private List<string> _regexMediaDateTime = new List<string>();
 
+        /// <summary>
+        /// Расширения для файлов изображений.
+        /// </summary>
         public string[] ImageExtension { get; set; }
 
+        /// <summary>
+        /// Расширения для файлов видеозаписей.
+        /// </summary>
         public string[] VideoExtension { get; set; }
 
         /// <summary>
@@ -65,11 +73,11 @@ namespace RenameMediaScript
         /// </summary>
         public bool AllowReplaceFile { get; set; }
 
-        public Settings(string path = "Settings.xml")
+        public Settings(string path = FILE_NAME)
         {
             if (!File.Exists(path))
             {
-                throw new FileNotFoundException($"Не найден файл с настройками по пути {path}");
+                throw new FileNotFoundException($"Не найден файл с настройками по пути `{path}`");
             }
             _document = XDocument.Load(path);
         }
@@ -82,18 +90,18 @@ namespace RenameMediaScript
             ExiftoolPath = GetElementValue(nameof(ExiftoolPath));
 
             RegexMediaDateTime = GetElementsValue(nameof(RegexMediaDateTime)).ToList();
-            Console.WriteLine($"Количество загруженных регулярных выражений - {_regexMediaDateTime.Count}.");
+            Console.WriteLine($"Количество загруженных регулярных выражений - `{_regexMediaDateTime.Count}`.");
 
             ImageExtension = GetElementsValue(nameof(ImageExtension));
-            Console.WriteLine($"Количество загруженных расширений для изображений - {ImageExtension.Length}.");
+            Console.WriteLine($"Количество загруженных расширений для изображений - `{ImageExtension.Length}`.");
 
             VideoExtension = GetElementsValue(nameof(VideoExtension));
-            Console.WriteLine($"Количество загруженных расширений для видео - {VideoExtension.Length}.");
+            Console.WriteLine($"Количество загруженных расширений для видео - `{VideoExtension.Length}`.");
 
             if (_document.Descendants(nameof(AllowReplaceFile)).Any())
             {
                 AllowReplaceFile = true;
-                Console.WriteLine($"ВНИМАНИЕ! Найден элемент {nameof(AllowReplaceFile)} в файле настроек. Оригинальные файлы будут заменены!");
+                Console.WriteLine($"ВНИМАНИЕ! Найден элемент `{nameof(AllowReplaceFile)}` в файле настроек. Оригинальные файлы будут заменены!");
             }
             else
             {
@@ -125,6 +133,12 @@ namespace RenameMediaScript
             return element.Value;
         }
 
+        /// <summary>
+        /// Выполнить поиск элемента по названию, произвести обработку, получить список всех значений.
+        /// </summary>
+        /// <param name="elementName">Название элемента.</param>
+        /// <returns>Массив содержащий все найденные значения по имени элемента.</returns>
+        /// <exception cref="Exception"></exception>
         private string[] GetElementsValue(string elementName)
         {
             var elements = _document.Descendants(elementName);
