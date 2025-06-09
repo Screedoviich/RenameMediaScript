@@ -1,0 +1,19 @@
+<Settings>
+	<Regex description="Список регулярных выражений по которым осуществляется поиск даты и времени в имени файла (расширение файла не учитывается)">
+		<RegexMediaDateTime>^(IMG_|VID_)(?'year'\d{4})(?'month'\d{2})(?'day'\d{2})_(?'hour'\d{2})(?'minute'\d{2})(?'second'\d{2})\w*$</RegexMediaDateTime>
+		<RegexMediaDateTime>^(?'year'\d{4})\.(?'month'\d{2})\.(?'day'\d{2})_(?'hour'\d{2})-(?'minute'\d{2})-(?'second'\d{2})(_IMG|_VID)?\w*$</RegexMediaDateTime>
+	</Regex>
+
+	<ExiftoolPath description="Путь к программе Exiftool">Exiftool\exiftool.exe</ExiftoolPath>
+
+	<VID description="Список обрабатываемых расширений видео файлов">
+		<VideoExtension>.mp4</VideoExtension>
+	</VID>
+
+	<IMG description="Список обрабатываемых расширений файлов изображений">
+		<ImageExtension>.jpg</ImageExtension>
+		<ImageExtension>.jpeg</ImageExtension>
+	</IMG>
+
+	<!-- <AllowReplaceFile /> -->
+</Settings>

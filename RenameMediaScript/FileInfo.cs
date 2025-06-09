@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -39,88 +40,96 @@ namespace RenameMediaScript
         /// <summary>
         /// Необходимость обработки файла.
         /// </summary>
-        public bool BeProcessing { get; set; }
+        public bool? BeProcessing { get; set; }
+
+        /// <summary>
+        /// Тип медиафайла.
+        /// </summary>
+        public MediaFileType Type { get; set; }
 
         public FileInfo(string fileFullPath)
         {
             FileOriginalFullPath = fileFullPath;
             FileOriginalName = Path.GetFileNameWithoutExtension(fileFullPath);
             FileExtension = Path.GetExtension(fileFullPath);
-            if (string.IsNullOrWhiteSpace(FileExtension))
-                FileExtension = null;
         }
 
+        /// <summary>
+        /// Вернуть строковое представление объекта.
+        /// </summary>
+        /// <returns>Строковое представление объекта.</returns>
         public override string ToString()
         {
             StringBuilder outString = new StringBuilder();
-            outString.Append($"Полное наименование файла: '{FileOriginalName}'\n");
-            outString.Append($"Необходимость обработки: '{(BeProcessing ? "Да" : "Нет")}'\n");
-            outString.Append($"Найденная дата формирования медиа: '{(CreateMediaDateTime == DateTime.MinValue ? "" : CreateMediaDateTime.ToString())}'\n");
-            outString.Append($"Новое наименование: '{FileNewName}'\n");
+            outString.Append($"Наименование файла: `{FileOriginalName}`. Расширение: `{FileExtension}`\n");
+            if (BeProcessing.HasValue)
+            {
+                outString.Append($"Необходимость обработки: `{(BeProcessing.Value ? "Да" : "Нет")}`\n");
+            }
+            outString.Append($"Найденная дата формирования медиа: `{(CreateMediaDateTime == DateTime.MinValue ? "" : CreateMediaDateTime.ToString())}`\n");
+            outString.Append($"Новое наименование: `{FileNewName}`\n");
             return outString.ToString();
+        }
+
+        /// <summary>
+        /// Проверить соответствие расширения файла необходимым заданным форматам.
+        /// Исключить файл из обработки если не найден необходимый формат.
+        /// </summary>
+        /// <param name="imageExtensions">Расширения изображений.</param>
+        /// <param name="videoExtensions">Расширения видеозаписей.</param>
+        public void CheckFileExtension(string[] imageExtensions, string[] videoExtensions)
+        {
+            if (imageExtensions.Any(f => f.ToLower() == FileExtension.ToLower()))
+            {
+                Type = MediaFileType.Image;
+                return;
+            }
+            if (videoExtensions.Any(f => f.ToLower() == FileExtension.ToLower()))
+            {
+                Type = MediaFileType.Video;
+                return;
+            }
+            BeProcessing = false;
         }
 
         /// <summary>
         /// Выполнить поиск даты и времени формирования медиафайла по его наименованию.
         /// </summary>
-        public void WriteDateTime()
+        public void WriteDateTime(string[] regexStringArray)
         {
-            // Получить дату и время в виде кортежа
-            var dateTimeTuple = GetDateTimeTupleFromFileName(FileOriginalName);
-            // Задать формат поиска даты из кортежа
-            const string formatDateTimeTuple = "(yyyy, MM, dd, HH, mm, ss)";
-            // Проверить и преобразовать строку в дату и время
-            if (DateTime.TryParseExact(dateTimeTuple.ToString(), formatDateTimeTuple, null, System.Globalization.DateTimeStyles.None, out DateTime dateTimeResult))
+            // Пропустить обработку файла
+            if (BeProcessing == false)
             {
-                CreateMediaDateTime = dateTimeResult;
-                BeProcessing = true;
+                return;
             }
-            else
+            // Проверить каждое регулярное выражение
+            foreach (string regexString in regexStringArray)
             {
-                BeProcessing = false;
+                Regex regex = new Regex(regexString);
+                Match match = regex.Match(FileOriginalName);
+                // Если регулярное выражение подошло
+                if (match.Success)
+                {
+                    string tempDateTime = match.Groups[MediaDateTime.year.ToString()].Value
+                        + match.Groups[MediaDateTime.month.ToString()].Value
+                        + match.Groups[MediaDateTime.day.ToString()].Value
+                        + match.Groups[MediaDateTime.hour.ToString()].Value
+                        + match.Groups[MediaDateTime.minute.ToString()].Value
+                        + match.Groups[MediaDateTime.second.ToString()].Value;
+                    // Попытаться извлечь дату и время
+                    const string formatDateTime = "yyyyMMddHHmmss";
+                    if (DateTime.TryParseExact(tempDateTime, formatDateTime, null, System.Globalization.DateTimeStyles.None, out DateTime dateTimeResult))
+                    {
+                        CreateMediaDateTime = dateTimeResult;
+                        BeProcessing = true;
+                        break;
+                    }
+                    else
+                    {
+                        BeProcessing = false;
+                    }
+                }
             }
-        }
-
-        /// <summary>
-        /// Выполняет поиск даты и времени в строке с помощью регулярных выражений и возвращает кортеж с данными.
-        /// </summary>
-        /// <param name="fileName">Строка для поиска.</param>
-        /// <returns>Кортеж содержащий дату и время. Год, месяц, день, час, минута, секунда.</returns>
-        private (string year, string month, string day, string hour, string minute, string second) GetDateTimeTupleFromFileName(string fileName)
-        {
-            // Объявить кортеж
-            (string year, string month, string day, string hour, string minute, string second) dateTimeTuple;
-            dateTimeTuple = (year: null, month: null, day: null, hour: null, minute: null, second: null);
-            // Начать поиск по регулярным выражениям
-            Regex regex;
-            #region Шаблон классический
-            regex = new Regex(@"^(IMG_|VID_)\d{8}_\d{6}(\.\w+|)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-            if (regex.IsMatch(fileName))
-            {
-                dateTimeTuple.year = fileName.Substring(4, 4);
-                dateTimeTuple.month = fileName.Substring(8, 2);
-                dateTimeTuple.day = fileName.Substring(10, 2);
-                dateTimeTuple.hour = fileName.Substring(13, 2);
-                dateTimeTuple.minute = fileName.Substring(15, 2);
-                dateTimeTuple.second = fileName.Substring(17, 2);
-                goto next;
-            }
-            #endregion
-            #region Шаблон повторный
-            regex = new Regex(@"^\d{4}\.\d{2}\.\d{2}_\d{2}-\d{2}-\d{2}(_VID|_IMG|)(\.\w+|)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-            if (regex.IsMatch(fileName))
-            {
-                dateTimeTuple.year = fileName.Substring(0, 4);
-                dateTimeTuple.month = fileName.Substring(5, 2);
-                dateTimeTuple.day = fileName.Substring(8, 2);
-                dateTimeTuple.hour = fileName.Substring(11, 2);
-                dateTimeTuple.minute = fileName.Substring(14, 2);
-                dateTimeTuple.second = fileName.Substring(17, 2);
-                goto next;
-            }
-        #endregion
-        next:
-            return dateTimeTuple;
         }
 
         /// <summary>
@@ -132,7 +141,7 @@ namespace RenameMediaScript
             {
                 StringBuilder fileNameBuild = new StringBuilder();
                 fileNameBuild.Append(CreateMediaDateTime.ToString("yyyy.MM.dd_HH-mm-ss"));
-                fileNameBuild.Append(GetFileType());
+                fileNameBuild.Append(Type.GetDescription());
                 FileNewName = fileNameBuild.ToString();
             }
             else
@@ -141,45 +150,36 @@ namespace RenameMediaScript
             }
         }
 
-        private string GetFileType()
-        {
-            if (string.IsNullOrWhiteSpace(FileExtension))
-            {
-                return null;
-            }
-
-            string[] imageFormats = new string[] { ".jpg", ".jpeg", ".png" };
-            string[] videoFormats = new string[] { ".mp4" };
-
-            if (imageFormats.Any(f => f.Contains(FileExtension)))
-            {
-                return "_IMG";
-            }
-            if (videoFormats.Any(f => f.Contains(FileExtension)))
-            {
-                return "_VID";
-            }
-            return null;
-        }
-
+        /// <summary>
+        /// Изменить метаданные создания медиафайла и сохранить файл.
+        /// </summary>
+        /// <param name="replaceFile">Разрешение замены оригинальных файлов.</param>
+        /// <param name="exiftoolPath">Путь к программному обеспечению Exiftool.</param>
+        /// <param name="directorySave">Директория для сохранения.</param>
+        /// <exception cref="Exception"></exception>
         public void EditAndSaveNewFile(bool replaceFile, string exiftoolPath, string directorySave = null)
         {
-            if (!BeProcessing)
+            // Пропустить обработку файла
+            if (BeProcessing == false)
             {
                 return;
             }
+            // Задать директорию сохранения 
             if (directorySave == null)
             {
-                directorySave = $"{Path.GetDirectoryName(FileOriginalFullPath)}\\Corrected files";
+                const string saveFolder = "Corrected files";
+                directorySave = $"{Path.GetDirectoryName(FileOriginalFullPath)}\\{saveFolder}";
             }
+            // Создать папку для сохранения файла
             try
             {
                 Directory.CreateDirectory(directorySave);
             }
             catch (Exception ex)
             {
-                throw new Exception($"Не удалось проверить или создать директорию по пути {directorySave}", ex);
+                throw new Exception($"Не удалось проверить или создать директорию по пути `{directorySave}`.", ex);
             }
+            // Задать новый путь для сохранения файла
             string fileNewFullPath = $"{directorySave}\\{FileNewName}{FileExtension}";
             if (replaceFile)
             {
@@ -193,6 +193,12 @@ namespace RenameMediaScript
             EditDateTimeTagsFile(fileNewFullPath, exiftoolPath);
         }
 
+        /// <summary>
+        /// Изменить дату создания медиафайла.
+        /// </summary>
+        /// <param name="filePath">Полный путь к файлу.</param>
+        /// <param name="exiftoolPath">Путь к программному обеспечению Exiftool.</param>
+        /// <exception cref="Exception"></exception>
         private void EditDateTimeTagsFile(string filePath, string exiftoolPath)
         {
             // Дата и время в виде строки
@@ -225,5 +231,24 @@ namespace RenameMediaScript
             File.SetLastWriteTime(filePath, CreateMediaDateTime);
             File.SetLastAccessTime(filePath, CreateMediaDateTime);
         }
+    }
+
+    public enum MediaDateTime
+    {
+        year,
+        month,
+        day,
+        hour,
+        minute,
+        second
+    }
+
+    public enum  MediaFileType
+    {
+        [Description("_IMG")]
+        Image,
+
+        [Description("_VID")]
+        Video
     }
 }
